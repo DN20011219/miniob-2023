@@ -11,6 +11,7 @@
             "program": "${workspaceFolder}/${defaultBuildTask}/bin/observer",
             "args": ["-f", "${workspaceFolder}/etc/observer.ini", "-P", "cli"],
             "cwd": "${workspaceFolder}/${defaultBuildTask}/",
+            "preLaunchTask": "build_debug",  // 执行调试的前置任务设置为编译debug版本
             "externalConsole":true,
             "internalConsoleOptions": "openOnSessionStart",
             "osx": {
