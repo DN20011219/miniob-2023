@@ -78,9 +78,7 @@ RC insert_record_from_file(Table *table,
         } else {
           record_values[i].set_int(int_value);
         }
-      }
-
-      break;
+      } break;
       case FLOATS: {
         deserialize_stream.clear();
         deserialize_stream.str(file_value);
@@ -96,6 +94,12 @@ RC insert_record_from_file(Table *table,
       } break;
       case CHARS: {
         record_values[i].set_string(file_value.c_str());
+      } break;
+      case DATES: {
+        if (record_values[i].init_date(const_cast<char*>(file_value.c_str())) == -1) {
+          errmsg << "Date is not valid: " << file_value;
+          rc = RC::FAILURE;
+        }
       } break;
       default: {
         errmsg << "Unsupported field type to loading: " << field->type();
