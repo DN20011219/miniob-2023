@@ -381,8 +381,9 @@ value:
       @$ = @1;
     } 
     |DATE_STR { 
+      char *tmp = common::substr($1,1,strlen($1)-2);
       $$ = new Value(); 
-      if ($$->init_date($1) == -1) { return -1; }
+      if ($$->init_date(tmp) == -1) { return -1; }
     }
     |SSS {
       char *tmp = common::substr($1,1,strlen($1)-2);

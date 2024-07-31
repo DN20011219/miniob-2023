@@ -1921,14 +1921,11 @@ yyreduce:
     break;
 
   case 49:
-#line 384 "yacc_sql.y"
+#line 383 "yacc_sql.y"
     { 
+      char *tmp = common::substr((yyvsp[(1) - (1)].string),1,strlen((yyvsp[(1) - (1)].string))-2);
       (yyval.value) = new Value(); 
-      if ((yyval.value)->init_date((yyvsp[(1) - (1)].string)) == -1) 
-      { 
-        (yyval.sql_node) = new ParsedSqlNode(SCF_ERROR);
-        return -1; 
-      }
+      if ((yyval.value)->init_date(tmp) == -1) { return -1; }
     ;}
     break;
 
@@ -2324,7 +2321,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 2316 "yacc_sql.cpp"
+#line 2317 "yacc_sql.cpp"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2512,7 +2509,7 @@ yyabortlab:
 | yyexhaustedlab -- memory exhaustion comes here.  |
 `-------------------------------------------------*/
 yyexhaustedlab:
-  yyerror (&yylloc, sql_string, sql_result, scanner, YY_("memory exhausted"));
+  yyerror (sql_string, sql_result, scanner, YY_("memory exhausted"));
   yyresult = 2;
   /* Fall through.  */
 #endif

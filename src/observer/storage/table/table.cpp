@@ -343,6 +343,7 @@ RC Table::get_record_scanner(RecordFileScanner &scanner, Trx *trx, bool readonly
 
 RC Table::create_index(Trx *trx, const FieldMeta *field_meta, const char *index_name)
 {
+  // 创建索引的实际代码
   if (common::is_blank(index_name) || nullptr == field_meta) {
     LOG_INFO("Invalid input arguments, table name is %s, index_name is blank or attribute_name is blank", name());
     return RC::INVALID_ARGUMENT;
