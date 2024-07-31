@@ -43,8 +43,6 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
 
 %}
 
-%define api.pure full
-%define parse.error verbose
 /** 启用位置标识 **/
 %locations
 %lex-param { yyscan_t scanner }
@@ -77,6 +75,7 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
         INT_T
         STRING_T
         FLOAT_T
+        DATE_T
         HELP
         EXIT
         DOT //QUOTE
@@ -96,8 +95,8 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
         GT
         LE
         GE
-        NE
-
+        NE 
+        
 /** union 中定义各种数据类型，真实生成的代码也是union类型，所以不能有非POD类型的数据 **/
 %union {
   ParsedSqlNode *                   sql_node;
@@ -117,10 +116,10 @@ ArithmeticExpr *create_arithmetic_expression(ArithmeticExpr::Type type,
   int                               number;
   float                             floats;
 }
-
 %token <number> NUMBER
 %token <floats> FLOAT
 %token <string> ID
+%token <string> DATE_STR
 %token <string> SSS
 //非终结符
 
@@ -339,7 +338,8 @@ number:
 type:
     INT_T      { $$=INTS; }
     | STRING_T { $$=CHARS; }
-    | FLOAT_T  { $$=FLOATS; }
+    | FLOAT_T  { $$=FLOATS; } 
+    | DATE_T   { $$=DATES; }
     ;
 insert_stmt:        /*insert   语句的语法解析树*/
     INSERT INTO ID VALUES LBRACE value value_list RBRACE 
@@ -379,12 +379,17 @@ value:
     |FLOAT {
       $$ = new Value((float)$1);
       @$ = @1;
+    } 
+    |DATE_STR 
+    { 
+      $$ = new Value(); 
+      $$->init_date($1);
     }
     |SSS {
       char *tmp = common::substr($1,1,strlen($1)-2);
       $$ = new Value(tmp);
       free(tmp);
-    }
+    } 
     ;
     
 delete_stmt:    /*  delete 语句的语法解析树*/

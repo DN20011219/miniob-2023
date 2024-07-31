@@ -19,11 +19,11 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/comparator.h"
 #include "common/lang/string.h"
 
-const char *ATTR_TYPE_NAME[] = {"undefined", "chars", "ints", "floats", "booleans"};
+const char *ATTR_TYPE_NAME[] = {"undefined", "chars", "ints", "floats", "booleans", "dates"};
 
 const char *attr_type_to_string(AttrType type)
 {
-  if (type >= UNDEFINED && type <= FLOATS) {
+  if (type >= UNDEFINED && type <= DATES) {
     return ATTR_TYPE_NAME[type];
   }
   return "unknown";
@@ -76,6 +76,10 @@ void Value::set_data(char *data, int length)
       num_value_.bool_value_ = *(int *)data != 0;
       length_ = length;
     } break;
+    case DATES:  {
+      num_value_.int_value_ = *(int *)data;
+      length_ = length;
+    } break;
     default: {
       LOG_WARN("unknown data type: %d", attr_type_);
     } break;
@@ -86,6 +90,77 @@ void Value::set_int(int val)
   attr_type_ = INTS;
   num_value_.int_value_ = val;
   length_ = sizeof(val);
+}
+
+void Value::init_date(char* val)
+{
+  // 截取val中的数据字段，去除-
+  char* date_str = new char[8];
+  memcpy(date_str, val, 4);
+  memcpy(date_str + 4, val + 5, 2);
+  memcpy(date_str + 6, val + 8, 2);
+  int date_int = atoi(date_str);
+  delete[] date_str;
+
+  // 设置数据类型为DATES
+  attr_type_ = DATES;
+
+  // 将日期转换为时间戳（从1970-01-01开始的天数）
+  int year = date_int / 10000;
+  int month = (date_int % 10000) / 100;
+  int day = date_int % 100;
+
+  // 检查日期是否有效
+  if (!Value::is_valid_date(year, month, day)) {
+    std::stringstream os;
+    os << "FAILURE\n";
+    throw std::invalid_argument("Invalid date");
+  }
+
+  num_value_.int_value_ = date_int;
+  length_ = sizeof(int);
+}
+
+void Value::set_date(int val)
+{
+  attr_type_ = DATES;
+  // 将日期转换为时间戳（从1970-01-01开始的天数）
+  int year = val / 10000;
+  int month = (val % 10000) / 100;
+  int day = val % 100;
+
+  // 检查日期是否有效
+  if (!Value::is_valid_date(year, month, day)) {
+    throw std::invalid_argument("Invalid date");
+  }
+
+  num_value_.int_value_ = val;
+  length_ = sizeof(val);
+}
+
+// 检查日期是否有效
+bool Value::is_valid_date(int year, int month, int day) {
+  if (year < 1970 || year > 9999) return false;
+  if (month < 1 || month > 12) return false;
+  if (day < 1 || day > Value::get_days_in_month(year, month)) return false;
+  return true;
+}
+
+// 获取月份的天数
+int Value::get_days_in_month(int year, int month) {
+  if (month == 2) {
+    if (Value::is_leap_year(year)) return 29;
+    else return 28;
+  } else if (month == 4 || month == 6 || month == 9 || month == 11) {
+    return 30;
+  } else {
+    return 31;
+  }
+}
+
+// 检查是否是闰年
+bool Value::is_leap_year(int year) {
+  return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
 }
 
 void Value::set_float(float val)
@@ -127,6 +202,9 @@ void Value::set_value(const Value &value)
     case BOOLEANS: {
       set_boolean(value.get_boolean());
     } break;
+    case DATES: {
+      set_date(value.get_date());
+    } break;
     case UNDEFINED: {
       ASSERT(false, "got an invalid value type");
     } break;
@@ -161,6 +239,16 @@ std::string Value::to_string() const
     case CHARS: {
       os << str_value_;
     } break;
+    case DATES: {
+      // 把一个20011219的int转换为2001-12-19输出
+      int date = num_value_.int_value_;
+      int year = date / 10000;
+      int month = (date % 10000) / 100;
+      int day = date % 100;
+      os << year << "-" 
+         << std::setw(2) << std::setfill('0') << month << "-"
+         << std::setw(2) << std::setfill('0') << day;
+    } break;
     default: {
       LOG_WARN("unsupported attr type: %d", attr_type_);
     } break;
@@ -186,6 +274,10 @@ int Value::compare(const Value &other) const
       } break;
       case BOOLEANS: {
         return common::compare_int((void *)&this->num_value_.bool_value_, (void *)&other.num_value_.bool_value_);
+      }
+      case DATES: {
+        // 日期的比较可以直接通过时间戳加减法比较得出结果
+        return common::compare_date((void *)&this->num_value_.int_value_, (void *)&other.num_value_.int_value_);
       }
       default: {
         LOG_WARN("unsupported type: %d", this->attr_type_);
@@ -222,6 +314,41 @@ int Value::get_int() const
     case BOOLEANS: {
       return (int)(num_value_.bool_value_);
     }
+    case DATES: {
+      return num_value_.int_value_;
+    }
+    default: {
+      LOG_WARN("unknown data type. type=%d", attr_type_);
+      return 0;
+    }
+  }
+  return 0;
+}
+
+// 和int一样
+int Value::get_date() const
+{
+  switch (attr_type_) {
+    case CHARS: {
+      try {
+        return (int)(std::stol(str_value_));
+      } catch (std::exception const &ex) {
+        LOG_TRACE("failed to convert string to number. s=%s, ex=%s", str_value_.c_str(), ex.what());
+        return 0;
+      }
+    }
+    case INTS: {
+      return num_value_.int_value_;
+    }
+    case FLOATS: {
+      return (int)(num_value_.float_value_);
+    }
+    case BOOLEANS: {
+      return (int)(num_value_.bool_value_);
+    }
+    case DATES: {
+      return num_value_.int_value_;
+    }
     default: {
       LOG_WARN("unknown data type. type=%d", attr_type_);
       return 0;
@@ -249,6 +376,9 @@ float Value::get_float() const
     } break;
     case BOOLEANS: {
       return float(num_value_.bool_value_);
+    } break;
+    case DATES: {
+      return float(num_value_.int_value_);
     } break;
     default: {
       LOG_WARN("unknown data type. type=%d", attr_type_);
@@ -294,6 +424,9 @@ bool Value::get_boolean() const
     case BOOLEANS: {
       return num_value_.bool_value_;
     } break;
+    case DATES: {
+      return num_value_.int_value_ != 0;
+    }
     default: {
       LOG_WARN("unknown data type. type=%d", attr_type_);
       return false;
