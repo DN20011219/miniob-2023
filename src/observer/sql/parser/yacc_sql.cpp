@@ -1924,7 +1924,11 @@ yyreduce:
 #line 384 "yacc_sql.y"
     { 
       (yyval.value) = new Value(); 
-      (yyval.value)->init_date((yyvsp[(1) - (1)].string));
+      if ((yyval.value)->init_date((yyvsp[(1) - (1)].string)) == -1) 
+      { 
+        (yyval.sql_node) = new ParsedSqlNode(SCF_ERROR);
+        return -1; 
+      }
     ;}
     break;
 

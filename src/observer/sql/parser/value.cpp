@@ -92,7 +92,7 @@ void Value::set_int(int val)
   length_ = sizeof(val);
 }
 
-void Value::init_date(char* val)
+int Value::init_date(char* val)
 {
   // 截取val中的数据字段，去除-
   char* date_str = new char[8];
@@ -112,13 +112,16 @@ void Value::init_date(char* val)
 
   // 检查日期是否有效
   if (!Value::is_valid_date(year, month, day)) {
-    std::stringstream os;
-    os << "FAILURE\n";
-    throw std::invalid_argument("Invalid date");
+    // 日期无效，设置为默认无效值
+    // num_value_.int_value_ = 0;
+    // length_ = sizeof(int);
+    // LOG_ERROR("FAILURE\n");
+    return -1;
   }
 
   num_value_.int_value_ = date_int;
   length_ = sizeof(int);
+  return 0;
 }
 
 void Value::set_date(int val)

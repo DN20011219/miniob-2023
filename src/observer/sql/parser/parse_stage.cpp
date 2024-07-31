@@ -36,7 +36,14 @@ RC ParseStage::handle_request(SQLStageEvent *sql_event)
 
   ParsedSqlResult parsed_sql_result;
 
-  parse(sql.c_str(), &parsed_sql_result);
+  // 检查DATE数据是否为正确的DATE, 如果不是，直接返回FAILURE
+  if (parse(sql.c_str(), &parsed_sql_result) == RC::FAILURE)
+  {
+    rc = RC::FAILURE;
+    sql_result->set_return_code(RC::FAILURE);
+    return rc;
+  }
+
   if (parsed_sql_result.sql_nodes().empty()) {
     sql_result->set_return_code(RC::SUCCESS);
     sql_result->set_state_string("");

@@ -380,10 +380,9 @@ value:
       $$ = new Value((float)$1);
       @$ = @1;
     } 
-    |DATE_STR 
-    { 
+    |DATE_STR { 
       $$ = new Value(); 
-      $$->init_date($1);
+      if ($$->init_date($1) == -1) { return -1; }
     }
     |SSS {
       char *tmp = common::substr($1,1,strlen($1)-2);
