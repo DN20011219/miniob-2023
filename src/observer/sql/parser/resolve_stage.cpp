@@ -34,6 +34,7 @@ RC ResolveStage::handle_request(SQLStageEvent *sql_event)
   SessionEvent *session_event = sql_event->session_event();
   SqlResult *sql_result = session_event->sql_result();
 
+  // 从session中获取当前操作的db
   Db *db = session_event->session()->get_current_db();
   if (nullptr == db) {
     LOG_ERROR("cannot find current db");
@@ -43,6 +44,7 @@ RC ResolveStage::handle_request(SQLStageEvent *sql_event)
     return rc;
   }
 
+  // 根据解析出来的ParsedSqlNode（语法树），构建对应的描述（Statement）
   ParsedSqlNode *sql_node = sql_event->sql_node().get();
   Stmt *stmt = nullptr;
   rc = Stmt::create_stmt(db, *sql_node, stmt);
