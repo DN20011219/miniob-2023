@@ -102,7 +102,7 @@ int Value::init_date(char* val)
 
   // 设置数据类型为DATES
   attr_type_ = DATES;
-  
+
   // 检查日期是否有效
   if (!Value::is_valid_date(year, month, day)) {
     return -1;
@@ -132,7 +132,7 @@ void Value::set_date(int val)
 
 // 检查日期是否有效
 bool Value::is_valid_date(int year, int month, int day) {
-  if (year < 1970 || year > 9999) return false;
+  if (year < 1000 || year > 9999) return false;
   if (month < 1 || month > 12) return false;
   if (day < 1 || day > Value::get_days_in_month(year, month)) return false;
   return true;
