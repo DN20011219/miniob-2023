@@ -49,14 +49,26 @@ Table::~Table()
 
   LOG_INFO("Table has been closed: %s", name());
 }
+
 RC Table::drop(const char *path, const char *data_file_dir)
 {
+  // 关闭buffer pool中缓存
+  BufferPoolManager &bpm = BufferPoolManager::instance();
+  RC rc = bpm.close_file(data_file_dir);
+  if (rc != RC::SUCCESS)
+  {
+    LOG_ERROR("Failed to close disk buffer pool of data file. file name=%s", data_file_dir);
+    return rc;
+  }
+
+  // 删除header
   if (::unlink(path) != 0) 
   {
     LOG_ERROR("Failed to delete table metadata file. filename=%s, errmsg=%d:%s", path, errno, strerror(errno));
     return RC::FILE_NOT_EXIST;
   }
 
+  // 删除data
   if (::unlink(data_file_dir) != 0) 
   {
     LOG_ERROR("Failed to delete data file. filename=%s, errmsg=%d:%s", data_file_dir, errno, strerror(errno));
