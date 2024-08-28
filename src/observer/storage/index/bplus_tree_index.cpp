@@ -48,6 +48,24 @@ RC BplusTreeIndex::create(const char *file_name, const IndexMeta &index_meta, co
   return RC::SUCCESS;
 }
 
+RC BplusTreeIndex::drop(const char *file_name)
+{
+  if (!inited_) {
+    LOG_WARN("Failed to drop index due to the index has not been created. file_name:%s", file_name);
+    return RC::RECORD_NOT_EXIST;
+  }
+
+  RC rc = index_handler_.drop(file_name);
+  if (RC::SUCCESS != rc) {
+    LOG_WARN("Failed to drop index_handler, file_name:%s ", file_name);
+    return rc;
+  }
+
+  inited_ = false;
+  LOG_INFO("Successfully drop index, file_name:%s,", file_name);
+  return RC::SUCCESS;
+}
+
 RC BplusTreeIndex::open(const char *file_name, const IndexMeta &index_meta, const FieldMeta &field_meta)
 {
   if (inited_) {

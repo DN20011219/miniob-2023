@@ -49,6 +49,32 @@ Table::~Table()
 
   LOG_INFO("Table has been closed: %s", name());
 }
+RC Table::drop(const char *path, const char *data_file_dir)
+{
+  if (::unlink(path) != 0) 
+  {
+    LOG_ERROR("Failed to delete table metadata file. filename=%s, errmsg=%d:%s", path, errno, strerror(errno));
+    return RC::FILE_NOT_EXIST;
+  }
+
+  if (::unlink(data_file_dir) != 0) 
+  {
+    LOG_ERROR("Failed to delete data file. filename=%s, errmsg=%d:%s", data_file_dir, errno, strerror(errno));
+    return RC::FILE_NOT_EXIST;
+  }
+
+  // 删除该表全部的索引，索引位于缓存及文件
+  for (auto& item : indexes_)
+  { 
+    if (delete_index(item) != RC::SUCCESS)
+    {
+      LOG_ERROR("Failed to delete index. index name=%s", item->index_meta().name());
+      return RC::INDEX_DELETE_FAIL;
+    }
+  }
+  
+  return RC::SUCCESS;
+}
 
 RC Table::create(int32_t table_id, 
                  const char *path, 
@@ -433,6 +459,59 @@ RC Table::create_index(Trx *trx, const FieldMeta *field_meta, const char *index_
   table_meta_.swap(new_table_meta);
 
   LOG_INFO("Successfully added a new index (%s) on the table (%s)", index_name, name());
+  return rc;
+}
+
+RC Table::delete_index(Index* index)
+{
+  RC rc = RC::SUCCESS;
+
+  /// 删除索引对应的文件，目前只有一种索引，只需要删除这种类型即可
+  const char *index_name = index->index_meta().name();
+  BplusTreeIndex* b_plus_index = dynamic_cast<BplusTreeIndex*>(index);
+  if (b_plus_index == nullptr) {
+    // 不支持删除的索引类型，返回失败
+    return RC::FAILURE;
+  } 
+  else
+  {
+    std::string index_file = table_index_file(base_dir_.c_str(), name(), index_name);
+    rc = b_plus_index->drop(index_file.c_str());
+  }
+
+  /// 将这个索引的元数据从表的元数据中删除
+  TableMeta new_table_meta(table_meta_);
+  rc = new_table_meta.drop_index(index_name);
+  if (rc != RC::SUCCESS) {
+    LOG_ERROR("Failed to drop index (%s) on table meta", index_name);
+    return rc;
+  }
+  // 创建元数据临时文件
+  std::string tmp_file = table_meta_file(base_dir_.c_str(), name()) + ".tmp";
+  std::fstream fs;
+  fs.open(tmp_file, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+  if (!fs.is_open()) {
+    LOG_ERROR("Failed to open file for write. file name=%s, errmsg=%s", tmp_file.c_str(), strerror(errno));
+    return RC::IOERR_OPEN;  // 删除索引中途出错，要做还原操作
+  }
+  if (new_table_meta.serialize(fs) < 0) {
+    LOG_ERROR("Failed to dump new table meta to file: %s. sys err=%d:%s", tmp_file.c_str(), errno, strerror(errno));
+    return RC::IOERR_WRITE;
+  }
+  fs.close();
+  // 覆盖原始元数据文件
+  std::string meta_file = table_meta_file(base_dir_.c_str(), name());
+  int ret = rename(tmp_file.c_str(), meta_file.c_str());
+  if (ret != 0) {
+    LOG_ERROR("Failed to rename tmp meta file (%s) to normal meta file (%s) while creating index (%s) on table (%s). "
+              "system error=%d:%s",
+              tmp_file.c_str(), meta_file.c_str(), index_name, name(), errno, strerror(errno));
+    return RC::IOERR_WRITE;
+  }
+  // 更新内存数据
+  table_meta_.swap(new_table_meta);
+  
+  rc = RC::SUCCESS;
   return rc;
 }
 

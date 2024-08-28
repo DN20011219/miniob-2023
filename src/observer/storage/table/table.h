@@ -59,7 +59,7 @@ public:
    * @param path 元数据保存的文件(完整路径)
    * @param base_dir 表数据存放的路径
    */
-  RC drop(const char *path, const char *base_dir);
+  RC drop(const char *path, const char *data_file_dir);
 
   /**
    * 打开一个表
@@ -91,6 +91,7 @@ public:
 
   // TODO refactor
   RC create_index(Trx *trx, const FieldMeta *field_meta, const char *index_name);
+  RC delete_index(Index* index);
 
   RC get_record_scanner(RecordFileScanner &scanner, Trx *trx, bool readonly);
 

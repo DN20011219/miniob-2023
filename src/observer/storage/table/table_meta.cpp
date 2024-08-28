@@ -100,6 +100,17 @@ RC TableMeta::add_index(const IndexMeta &index)
   return RC::SUCCESS;
 }
 
+RC TableMeta::drop_index(const char* name)
+{
+  const IndexMeta* index = find_index_by_field(name);
+  if (index != nullptr) {
+    auto newEnd = std::remove_if(indexes_.begin(), indexes_.end(),
+                                 [index](const IndexMeta elem) { return &elem == index; });
+    indexes_.erase(newEnd, indexes_.end());
+  }
+  return RC::SUCCESS;
+}
+
 const char *TableMeta::name() const
 {
   return name_.c_str();

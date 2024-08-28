@@ -103,34 +103,26 @@ RC Db::create_table(const char *table_name, int attribute_count, const AttrInfoS
 
 RC Db::drop_table(const char *table_name)
 {
-  // TODO:dingning
   RC rc = RC::SUCCESS;
-  // check table_name
-  if (opened_tables_.count(table_name) != 0) {
-    LOG_WARN("%s has been opened before.", table_name);
-    return RC::SCHEMA_TABLE_EXIST;
+
+  // check table_name exist
+  if (opened_tables_.count(table_name) == 0) {
+    LOG_WARN("table %s not exists.", table_name);
+    return RC::INVALID_ARGUMENT;
   }
 
-
+  // 删除table data、 table header、index
   std::string table_file_path = table_meta_file(path_.c_str(), table_name);
-  
-  // 删除table header
-  // 删除table data
-  // 删除table index
-  // 删除视图。。。。
-  // 文件路径可以移到Table模块
-  
-  Table *table = new Table();
-  int32_t table_id = next_table_id_++;
-  // rc = table->create(table_id, table_file_path.c_str(), table_name, path_.c_str(), attribute_count, attributes);
+  std::string data_file = table_data_file(path_.c_str(), table_name);
+  rc = opened_tables_[table_name]->drop(table_file_path.c_str(), data_file.c_str());
   if (rc != RC::SUCCESS) {
-    LOG_ERROR("Failed to create table %s.", table_name);
-    delete table;
+    LOG_ERROR("Failed to drop table %s.", table_name);
     return rc;
   }
 
-  opened_tables_[table_name] = table;
-  LOG_INFO("Create table success. table name=%s, table_id:%d", table_name, table_id);
+  // TODO: 删除视图...
+
+  LOG_INFO("Drop table success. table name=%s ", table_name);
   return RC::SUCCESS;
 }
 

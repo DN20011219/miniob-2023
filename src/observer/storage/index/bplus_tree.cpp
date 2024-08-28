@@ -819,6 +819,21 @@ RC BplusTreeHandler::create(const char *file_name, AttrType attr_type, int attr_
   return RC::SUCCESS;
 }
 
+RC BplusTreeHandler::drop(const char *file_name)
+{
+  // 首先关闭
+  close();
+
+  // 删除索引文件
+  if (::unlink(file_name) != 0) {
+    LOG_ERROR("Failed to delete index file. filename=%s, errmsg=%d:%s", file_name, errno, strerror(errno));
+    return RC::IOERR_DELETE;
+  }
+
+  return RC::SUCCESS;
+}
+
+
 RC BplusTreeHandler::open(const char *file_name)
 {
   if (disk_buffer_pool_ != nullptr) {
