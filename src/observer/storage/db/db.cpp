@@ -122,6 +122,10 @@ RC Db::drop_table(const char *table_name)
 
   // TODO: 删除视图...
 
+  // 删除内存缓存
+  string tb_name(table_name);
+  opened_tables_.erase(tb_name);
+
   LOG_INFO("Drop table success. table name=%s ", table_name);
   return RC::SUCCESS;
 }
