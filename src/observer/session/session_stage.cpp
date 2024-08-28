@@ -127,7 +127,7 @@ void SessionStage::handle_request(StageEvent *event)
 RC SessionStage::handle_sql(SQLStageEvent *sql_event)
 {
   RC rc = query_cache_stage_.handle_request(sql_event);
-  string sql();
+
   if (OB_FAIL(rc)) {
     string msg = "failed to do query cache. rc= " + sql_event->sql();
     sql_debug(msg.c_str());

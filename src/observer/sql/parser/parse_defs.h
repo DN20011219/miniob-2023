@@ -305,11 +305,6 @@ public:
   ExplainSqlNode            explain;
   SetVariableSqlNode        set_variable;
 
-// TODO:dingning 根据各个语句，依次过滤是否需要对DATE添加额外的支持
-// SqlCommandFlag 无需
-// ErrorSqlNode 无需
-// 
-
 public:
   ParsedSqlNode();
   explicit ParsedSqlNode(SqlCommandFlag flag);

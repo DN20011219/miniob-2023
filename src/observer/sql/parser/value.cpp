@@ -95,13 +95,13 @@ void Value::set_int(int val)
 
 int Value::init_date(char* val)
 {
+  // 设置数据类型为DATES
+  attr_type_ = DATES;
+
   // 截取val中的数据字段，去除-
   int year, month, day;
   sscanf(val, "%d-%d-%d", &year, &month, &day);
   int date_int = year * 10000 + month * 100 + day;
-
-  // 设置数据类型为DATES
-  attr_type_ = DATES;
 
   // 检查日期是否有效
   if (!Value::is_valid_date(year, month, day)) {
