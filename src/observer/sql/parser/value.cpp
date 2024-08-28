@@ -96,27 +96,15 @@ void Value::set_int(int val)
 int Value::init_date(char* val)
 {
   // 截取val中的数据字段，去除-
-  char* date_str = new char[8];
-  memcpy(date_str, val, 4);
-  memcpy(date_str + 4, val + 5, 2);
-  memcpy(date_str + 6, val + 8, 2);
-  int date_int = atoi(date_str);
-  delete[] date_str;
+  int year, month, day;
+  sscanf(val, "%d-%d-%d", &year, &month, &day);
+  int date_int = year * 10000 + month * 100 + day;
 
   // 设置数据类型为DATES
   attr_type_ = DATES;
-
-  // 将日期转换为时间戳（从1970-01-01开始的天数）
-  int year = date_int / 10000;
-  int month = (date_int % 10000) / 100;
-  int day = date_int % 100;
-
+  
   // 检查日期是否有效
   if (!Value::is_valid_date(year, month, day)) {
-    // 日期无效，设置为默认无效值
-    // num_value_.int_value_ = 0;
-    // length_ = sizeof(int);
-    // LOG_ERROR("FAILURE\n");
     return -1;
   }
 
